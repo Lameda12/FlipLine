@@ -132,7 +132,9 @@ fn export(app: &mut FlipLineApp, ctx: &Context) {
     let mut go: Option<(Format, String)> = None;
     let mut cancel = false;
 
-    let d = app.ui.export_dialog.as_mut().expect("checked above");
+    let Some(d) = app.ui.export_dialog.as_mut() else {
+        return;
+    };
     let modal = Modal::new(Id::new("export")).show(ctx, |ui| {
         ui.set_width(400.0);
         ui.heading("Export");

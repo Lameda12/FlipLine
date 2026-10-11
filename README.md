@@ -2,8 +2,9 @@
 
 A free, fast, MIT-licensed frame-by-frame 2D animation editor. Draw a frame, flip, onion skin, time it, export. Native on macOS, Windows and Linux, and in the browser.
 
-<!-- Replace with a real capture: record a 10 s GIF of drawing a few frames, flipping with `,` `.`, and pressing Space to play. -->
-![FlipLine screenshot placeholder](docs/screenshot.gif)
+![FlipLine: the bouncing-ball sample with onion skin on frame 5](docs/screenshot.png)
+
+<!-- TODO: add docs/demo.gif, a 10 s capture of drawing a few frames, flipping with `,` `.` and pressing Space to play. -->
 
 [Try it in the browser](https://lameda12.github.io/FlipLine/) (enable GitHub Pages with source "GitHub Actions" for your fork) · [Download](https://github.com/Lameda12/FlipLine/releases)
 

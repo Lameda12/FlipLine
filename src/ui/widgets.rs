@@ -351,7 +351,7 @@ pub fn icon_loop(pt: &Painter, r: Rect, c: Color32) {
             })
             .collect();
         line(pt, &pts, 2.0, c);
-        let tip = *pts.last().unwrap();
+        let tip = pts[n];
         let a = end + std::f32::consts::FRAC_PI_2;
         let d = vec2(a.cos(), a.sin());
         let n_ = vec2(-d.y, d.x);

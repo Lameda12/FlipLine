@@ -1294,6 +1294,78 @@ mod tests {
         assert_eq!(app.project.frame(1).unwrap().pixmap().unwrap().data()[0], 99);
     }
 
+    /// Pumps the app's message queue until `done` holds (worker threads report through it).
+    fn pump_until(app: &mut FlipLineApp, ctx: &eframe::egui::Context, done: impl Fn(&FlipLineApp) -> bool) {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+        while !done(app) {
+            assert!(
+                std::time::Instant::now() < deadline,
+                "timed out waiting for background work"
+            );
+            app.poll_messages(ctx);
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    }
+
+    fn temp_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("flipline-{}-{name}", std::process::id()))
+    }
+
+    #[test]
+    fn export_runs_on_a_worker_thread_and_reports_progress() {
+        let mut app = app_with_frames(6);
+        draw(&mut app, (10.0, 10.0), (50.0, 50.0));
+        let ctx = eframe::egui::Context::default();
+        let path = temp_path("export.gif");
+        let mut opts = ExportOptions::new(Format::Gif);
+        opts.transparent = false;
+        app.start_export(Dest::File(path.clone()), opts, &ctx);
+        let (done, total, label) = app.export_progress().expect("export is running");
+        assert_eq!((total, label), (6, "Animated GIF"));
+        assert!(done <= total);
+        pump_until(&mut app, &ctx, |a| a.export_run.is_none());
+        let bytes = std::fs::read(&path).unwrap();
+        assert_eq!(&bytes[..6], b"GIF89a");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn cancelling_an_export_removes_the_partial_file() {
+        // Big enough that the worker is still busy when the cancel flag is raised.
+        let mut p = Project::new("t", 1280, 720);
+        for _ in 1..40 {
+            let f = p.new_blank_frame();
+            let at = p.len();
+            p.insert_frame(at, f);
+        }
+        let mut app = FlipLineApp::with_project(p);
+        let ctx = eframe::egui::Context::default();
+        let path = temp_path("cancel.gif");
+        app.start_export(Dest::File(path.clone()), ExportOptions::new(Format::Gif), &ctx);
+        app.cancel_export();
+        pump_until(&mut app, &ctx, |a| a.export_run.is_none());
+        assert!(!path.exists(), "partial output is cleaned up");
+    }
+
+    #[test]
+    fn save_writes_in_the_background_and_clears_the_modified_flag() {
+        let mut app = app_with_frames(2);
+        let ctx = eframe::egui::Context::default();
+        let path = temp_path("save.flipline");
+        app.file_path = Some(path.clone());
+        draw(&mut app, (10.0, 10.0), (50.0, 50.0));
+        assert!(app.is_modified());
+        app.save(&ctx, false);
+        pump_until(&mut app, &ctx, |a| !a.is_modified());
+        let reopened = from_bytes(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(reopened.len(), 2);
+        assert!(!reopened.frame(0).unwrap().is_blank());
+        // Edits made after the save snapshot are not lost from the dirty flag.
+        draw(&mut app, (20.0, 20.0), (40.0, 40.0));
+        assert!(app.is_modified());
+        let _ = std::fs::remove_file(path);
+    }
+
     #[test]
     fn texture_eviction_keeps_only_frames_near_the_playhead() {
         let mut app = app_with_frames(10);

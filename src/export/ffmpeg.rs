@@ -11,7 +11,7 @@ use crate::model::Snapshot;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn ffmpeg_available() -> bool {
-    Command::new("ffmpeg")
+    quiet(Command::new("ffmpeg"))
         .arg("-version")
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -24,6 +24,17 @@ pub fn ffmpeg_available() -> bool {
 #[cfg(target_arch = "wasm32")]
 pub fn ffmpeg_available() -> bool {
     false
+}
+
+/// Keeps a console window from flashing up when a GUI app spawns ffmpeg on Windows.
+#[cfg_attr(not(windows), allow(unused_mut))]
+fn quiet(mut cmd: Command) -> Command {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    cmd
 }
 
 /// The ffmpeg invocation for raw RGBA on stdin. Pure so it can be unit-tested.
@@ -84,7 +95,7 @@ impl Mp4Stage {
             return Err(ExportError::Unsupported("MP4 needs a file destination".into()));
         };
         let (w, h) = opts.scale.dims(snap.width, snap.height);
-        let mut child = Command::new("ffmpeg")
+        let mut child = quiet(Command::new("ffmpeg"))
             .args(ffmpeg_command(w, h, snap.fps, path))
             .stdin(Stdio::piped())
             .stdout(Stdio::null())

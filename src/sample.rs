@@ -93,6 +93,44 @@ fn draw_frame(i: usize) -> Pixmap {
     pm
 }
 
+/// Window icon, drawn in code: a flipped pair of balls (the onion-skin motif) on a dark tile.
+pub fn app_icon() -> eframe::egui::IconData {
+    const N: u32 = 128;
+    let mut pm = Pixmap::new(N, N).expect("icon size");
+    let t = Transform::identity();
+    let (n, k) = (N as f32, 28.0);
+    let mut tile = PathBuilder::new();
+    tile.move_to(k, 0.0);
+    tile.line_to(n - k, 0.0);
+    tile.quad_to(n, 0.0, n, k);
+    tile.line_to(n, n - k);
+    tile.quad_to(n, n, n - k, n);
+    tile.line_to(k, n);
+    tile.quad_to(0.0, n, 0.0, n - k);
+    tile.line_to(0.0, k);
+    tile.quad_to(0.0, 0.0, k, 0.0);
+    tile.close();
+    if let Some(p) = tile.finish() {
+        pm.fill_path(&p, &paint([0x1C, 0x1E, 0x20, 255]), FillRule::Winding, t, None);
+    }
+    if let Some(p) = oval(50.0, 70.0, 30.0, 30.0) {
+        pm.fill_path(&p, &paint([0xE5, 0x48, 0x4D, 120]), FillRule::Winding, t, None);
+    }
+    if let Some(p) = oval(78.0, 60.0, 32.0, 32.0) {
+        pm.fill_path(&p, &paint([0xFF, 0x8A, 0x4C, 255]), FillRule::Winding, t, None);
+        let stroke = Stroke {
+            width: 6.0,
+            ..Stroke::default()
+        };
+        pm.stroke_path(&p, &paint([0xFF, 0xFA, 0xF0, 255]), &stroke, t, None);
+    }
+    eframe::egui::IconData {
+        rgba: crate::model::pixels::pixmap_to_straight(&pm),
+        width: N,
+        height: N,
+    }
+}
+
 pub fn bouncing_ball() -> Project {
     let mut p = Project::empty("Bouncing ball", W, H);
     p.fps = 12;
@@ -107,6 +145,15 @@ pub fn bouncing_ball() -> Project {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn app_icon_is_a_valid_square_rgba_image() {
+        let i = app_icon();
+        assert_eq!(i.rgba.len(), (i.width * i.height * 4) as usize);
+        assert_eq!(i.rgba[3], 0, "rounded tile has transparent corners");
+        let centre = ((i.height / 2 * i.width + i.width / 2) * 4) as usize;
+        assert_eq!(i.rgba[centre + 3], 255);
+    }
 
     #[test]
     fn has_twelve_frames_at_12fps() {
