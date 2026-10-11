@@ -1,0 +1,43 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. New project, 1280x720
+        2. Draw a closed shape with the brush
+        3. Fill it with G
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where are you running FlipLine?
+      options: [macOS, Windows, Linux, Web (browser demo)]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.1.0
+  - type: input
+    id: device
+    attributes:
+      label: Input device
+      description: Mouse, trackpad, touchscreen, or pen tablet (brand and model help with pressure issues).
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, a small .flipline file that shows the problem, or terminal output (`RUST_LOG=info flipline`).

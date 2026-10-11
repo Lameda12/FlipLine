@@ -9,7 +9,7 @@
     <title>FlipLine</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-    <link data-trunk rel="rust" data-bin="flipline" data-wasm-opt="z" />
+    <link data-trunk rel="rust" data-bin="flipline" data-wasm-opt="z" data-wasm-opt-params="--enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext --enable-mutable-globals" />
     <link data-trunk rel="copy-file" href="web/favicon.svg" />
 
     <style>

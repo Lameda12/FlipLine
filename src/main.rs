@@ -32,6 +32,7 @@ fn main() {
             .expect("missing #flipline_canvas")
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .expect("#flipline_canvas is not a canvas");
+        flipline::platform::web::install_pen_listeners(&canvas);
         let result = eframe::WebRunner::new()
             .start(
                 canvas,

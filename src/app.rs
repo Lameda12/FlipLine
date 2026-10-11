@@ -371,6 +371,17 @@ impl FlipLineApp {
         }
     }
 
+    /// Changes the paper colour (a project setting, not an undoable edit).
+    pub fn set_paper(&mut self, paper: [u8; 3]) {
+        if paper != self.project.paper {
+            self.project.paper = paper;
+            for f in self.project.frames_mut() {
+                f.gpu.thumb_rev = 0; // thumbnails are composited over the paper
+            }
+            self.mark_modified();
+        }
+    }
+
     pub fn set_fps(&mut self, fps: u32, now: f64) {
         if fps != self.project.fps {
             self.project.fps = fps;
@@ -605,6 +616,23 @@ impl FlipLineApp {
             Pending::Sample => {
                 self.replace_project(sample::bouncing_ball(), None, false);
             }
+        }
+    }
+
+    /// Opens a project from disk (command-line argument or OS "open with").
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn open_path(&mut self, path: &std::path::Path) {
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        match std::fs::read(path) {
+            Ok(bytes) => self.perform(Pending::OpenBytes {
+                name,
+                bytes,
+                path: Some(path.to_path_buf()),
+            }),
+            Err(e) => self.toasts.error(format!("Couldn't read {name}: {e}")),
         }
     }
 

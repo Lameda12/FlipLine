@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an improvement for animators
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the animation workflow, not just the feature. "I need to X while Y" is more useful than "add Z".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you do it today?
+      description: In FlipLine, or in another tool (Animate, Toon Boom, Krita, TVPaint...).
+  - type: checkboxes
+    id: roadmap
+    attributes:
+      label: Is it on the roadmap?
+      description: See the README roadmap (layers, lasso/transform, audio track, vector strokes, light-table reference frames).
+      options:
+        - label: I checked the roadmap

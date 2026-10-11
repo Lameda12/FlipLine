@@ -8,6 +8,7 @@ use eframe::egui::{
 
 use super::theme::Palette;
 use crate::app::{FlipLineApp, ZoomRequest};
+use crate::platform;
 use crate::render::{self, color32};
 use crate::tools::{Sample, ToolId};
 
@@ -82,6 +83,11 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                 let p = (pos - canvas.min) / s;
                 Sample::new(p.x, p.y, pressure.unwrap_or(1.0))
             };
+            // Pen/touch force from egui events, falling back to browser pointer-event pressure.
+            let web_pen = platform::extra_pen_pressure();
+            if web_pen.is_some() {
+                app.input.saw_pressure = true;
+            }
             let events: Vec<Event> = ctx.input(|i| i.events.clone());
             let multi = ctx.input(|i| i.multi_touch()).is_some();
             for ev in events {
@@ -111,11 +117,11 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                             && !app.playback.playing
                             && !blocked_by_dialog(app)
                         {
-                            app.pointer_down(sample_at(pos, app.input.pressure));
+                            app.pointer_down(sample_at(pos, app.input.pressure.or(web_pen)));
                         }
                     }
                     Event::PointerMoved(pos) if app.stroke.is_some() => {
-                        app.pointer_drag(sample_at(pos, app.input.pressure));
+                        app.pointer_drag(sample_at(pos, app.input.pressure.or(web_pen)));
                     }
                     Event::PointerButton {
                         button: PointerButton::Primary,

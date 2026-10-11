@@ -59,6 +59,18 @@ pub fn set_window_title(ctx: &Context, title: &str) {
     }
 }
 
+/// Pen pressure that the egui backend does not forward itself (browser pointer events).
+pub fn extra_pen_pressure() -> Option<f32> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        web::pen_pressure()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        None
+    }
+}
+
 pub fn is_web() -> bool {
     cfg!(target_arch = "wasm32")
 }
@@ -422,6 +434,36 @@ pub mod web {
     use base64::Engine as _;
     use wasm_bindgen::JsCast;
     use wasm_bindgen::JsValue;
+
+    use std::cell::Cell;
+
+    thread_local! {
+        /// Latest pressure from a `pointerType == "pen"` event. eframe 0.36 only forwards `force`
+        /// for touch events, so desktop-browser pens (Wacom etc.) would otherwise report nothing.
+        static PEN_PRESSURE: Cell<Option<f32>> = const { Cell::new(None) };
+    }
+
+    pub fn pen_pressure() -> Option<f32> {
+        PEN_PRESSURE.with(|c| c.get())
+    }
+
+    /// Listens for pen pointer events on the canvas and records their pressure.
+    pub fn install_pen_listeners(canvas: &web_sys::HtmlCanvasElement) {
+        use wasm_bindgen::closure::Closure;
+        let track = Closure::<dyn FnMut(web_sys::PointerEvent)>::new(|e: web_sys::PointerEvent| {
+            let pressure = (e.pointer_type() == "pen" && e.pressure() > 0.0).then(|| e.pressure());
+            PEN_PRESSURE.with(|c| c.set(pressure));
+        });
+        let clear = Closure::<dyn FnMut(web_sys::PointerEvent)>::new(|_| PEN_PRESSURE.with(|c| c.set(None)));
+        for ev in ["pointerdown", "pointermove"] {
+            let _ = canvas.add_event_listener_with_callback(ev, track.as_ref().unchecked_ref());
+        }
+        for ev in ["pointerup", "pointercancel", "pointerleave"] {
+            let _ = canvas.add_event_listener_with_callback(ev, clear.as_ref().unchecked_ref());
+        }
+        track.forget();
+        clear.forget();
+    }
 
     fn err(e: JsValue) -> String {
         e.as_string().unwrap_or_else(|| format!("{e:?}"))

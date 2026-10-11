@@ -110,6 +110,18 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
             }
 
             ui.add_space(8.0);
+            w::label_caps(ui, "Paper");
+            let mut paper = app.project.paper;
+            ui.spacing_mut().interact_size.x = 74.0;
+            if ui
+                .color_edit_button_srgb(&mut paper)
+                .on_hover_text("Paper colour")
+                .changed()
+            {
+                app.set_paper(paper);
+            }
+
+            ui.add_space(8.0);
             let pressure = if app.input.saw_pressure {
                 "Pen pressure: on"
             } else {
