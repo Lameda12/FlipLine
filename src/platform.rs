@@ -465,6 +465,22 @@ pub mod web {
         clear.forget();
     }
 
+    /// Stops the browser from stealing shortcuts FlipLine uses that eframe doesn't already guard
+    /// (it covers Ctrl/Cmd+S, Space, arrows, Backspace): Ctrl/Cmd+E focuses the search bar in
+    /// Chrome and Firefox, and F1 opens browser help.
+    pub fn install_key_guards(canvas: &web_sys::HtmlCanvasElement) {
+        use wasm_bindgen::closure::Closure;
+        let guard = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(|e: web_sys::KeyboardEvent| {
+            let key = e.key();
+            let cmd = e.ctrl_key() || e.meta_key();
+            if (cmd && key.eq_ignore_ascii_case("e")) || key == "F1" {
+                e.prevent_default();
+            }
+        });
+        let _ = canvas.add_event_listener_with_callback("keydown", guard.as_ref().unchecked_ref());
+        guard.forget();
+    }
+
     fn err(e: JsValue) -> String {
         e.as_string().unwrap_or_else(|| format!("{e:?}"))
     }

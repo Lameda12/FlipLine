@@ -37,7 +37,24 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
         return;
     }
 
+    // Navigation, hold, size and undo keys may auto-repeat; actions that create or destroy things
+    // (new/duplicate/delete frame, tool switches, save, export...) fire once per physical press.
+    let fresh: Vec<Key> = ctx.input(|i| {
+        i.events
+            .iter()
+            .filter_map(|e| match e {
+                Event::Key {
+                    key,
+                    pressed: true,
+                    repeat: false,
+                    ..
+                } => Some(*key),
+                _ => None,
+            })
+            .collect()
+    });
     let k = |m: Modifiers, key: Key| ctx.input_mut(|i| i.consume_key(m, key));
+    let once = |m: Modifiers, key: Key| k(m, key) && fresh.contains(&key);
     let cmd = Modifiers::COMMAND;
     let cmd_shift = Modifiers::COMMAND | Modifiers::SHIFT;
 
@@ -47,13 +64,13 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
     if k(cmd, Key::Z) {
         app.undo();
     }
-    if k(cmd_shift, Key::S) {
+    if once(cmd_shift, Key::S) {
         app.save(ctx, true);
     }
-    if k(cmd, Key::S) {
+    if once(cmd, Key::S) {
         app.save(ctx, false);
     }
-    if k(cmd, Key::E) {
+    if once(cmd, Key::E) {
         app.open_export_dialog();
     }
     if k(Modifiers::ALT, Key::ArrowLeft) {
@@ -64,16 +81,16 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
     }
 
     let plain = Modifiers::NONE;
-    if k(plain, Key::B) {
+    if once(plain, Key::B) {
         app.set_tool(ToolId::Brush);
     }
-    if k(plain, Key::E) {
+    if once(plain, Key::E) {
         app.set_tool(ToolId::Eraser);
     }
-    if k(plain, Key::G) {
+    if once(plain, Key::G) {
         app.set_tool(ToolId::Fill);
     }
-    if k(plain, Key::I) {
+    if once(plain, Key::I) {
         app.set_tool(ToolId::Picker);
     }
     if k(plain, Key::OpenBracket) {
@@ -88,13 +105,13 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
     if k(plain, Key::Period) || k(plain, Key::ArrowRight) {
         app.step_frame(1);
     }
-    if k(plain, Key::N) {
+    if once(plain, Key::N) {
         app.new_frame();
     }
-    if k(plain, Key::D) {
+    if once(plain, Key::D) {
         app.duplicate_frame();
     }
-    if k(plain, Key::Delete) || k(plain, Key::Backspace) {
+    if once(plain, Key::Delete) || once(plain, Key::Backspace) {
         app.delete_frame();
     }
     if k(plain, Key::Minus) {
@@ -107,13 +124,13 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
     {
         app.change_hold(1);
     }
-    if k(plain, Key::O) {
+    if once(plain, Key::O) {
         app.onion.enabled = !app.onion.enabled;
     }
-    if k(plain, Key::F) {
+    if once(plain, Key::F) {
         app.view.request = Some(crate::app::ZoomRequest::Fit);
     }
-    if k(plain, Key::Num1) {
+    if once(plain, Key::Num1) {
         app.view.request = Some(crate::app::ZoomRequest::Actual);
     }
     if k(plain, Key::F1)

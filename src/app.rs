@@ -161,6 +161,7 @@ pub struct FlipLineApp {
     clean_gen: u64,
     local_gen: u64,
     pending_save_gen: Option<u64>,
+    autosave_warned: bool,
 
     pub tools: Toolbox,
     pub tool: ToolId,
@@ -258,6 +259,7 @@ impl FlipLineApp {
             clean_gen: 0,
             local_gen: 0,
             pending_save_gen: None,
+            autosave_warned: false,
             tools: Toolbox::default(),
             tool: ToolId::Brush,
             return_tool: ToolId::Brush,
@@ -873,8 +875,15 @@ impl FlipLineApp {
                 Msg::ExportFinished(r) => self.finish_export(r),
                 Msg::AutosaveDone(r) => {
                     self.autosave.finished();
+                    // Warn once: a project that's too big for browser storage would otherwise
+                    // toast every few seconds.
                     if let Err(e) = r {
-                        self.toasts.error(format!("Autosave failed: {e}"));
+                        if !self.autosave_warned {
+                            self.autosave_warned = true;
+                            self.toasts.error(format!("Autosave failed: {e}"));
+                        }
+                    } else {
+                        self.autosave_warned = false;
                     }
                 }
                 Msg::FfmpegChecked(ok) => self.ffmpeg_ok = ok,

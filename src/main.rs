@@ -36,6 +36,7 @@ fn main() {
             return;
         };
         flipline::platform::web::install_pen_listeners(&canvas);
+        flipline::platform::web::install_key_guards(&canvas);
         let result = eframe::WebRunner::new()
             .start(
                 canvas,
