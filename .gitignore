@@ -1,0 +1,5 @@
+/target
+/dist
+*.flipline
+!tests/fixtures/*.flipline
+.DS_Store
