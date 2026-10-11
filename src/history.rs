@@ -233,7 +233,6 @@ impl Command for Composite {
 pub struct History {
     undo: Vec<Box<dyn Command>>,
     redo: Vec<Box<dyn Command>>,
-    bytes: usize,
     /// Increments on every change, so the app can tell the project is modified.
     generation: u64,
 }
@@ -274,14 +273,12 @@ impl History {
     pub fn clear(&mut self) {
         self.undo.clear();
         self.redo.clear();
-        self.bytes = 0;
         self.generation += 1;
     }
 
     /// Records a command whose effect has already been applied (strokes, fills).
     pub fn push_applied(&mut self, cmd: Box<dyn Command>) {
         self.redo.clear();
-        self.bytes += cmd.bytes();
         self.undo.push(cmd);
         self.generation += 1;
         self.trim();
@@ -310,11 +307,13 @@ impl History {
         sel.or(Some(0))
     }
 
+    /// Drops the oldest entries beyond the count cap or the byte budget. The byte total is
+    /// recomputed (at most 50 entries) so undone-then-discarded edits never inflate it.
     fn trim(&mut self) {
-        // `bytes` only tracks the undo stack at push time; recompute cheaply when trimming.
-        while self.undo.len() > MAX_ENTRIES || (self.bytes > MAX_BYTES && self.undo.len() > 1) {
+        let mut bytes: usize = self.undo.iter().map(|c| c.bytes()).sum();
+        while self.undo.len() > MAX_ENTRIES || (bytes > MAX_BYTES && self.undo.len() > 1) {
             let dropped = self.undo.remove(0);
-            self.bytes = self.bytes.saturating_sub(dropped.bytes());
+            bytes = bytes.saturating_sub(dropped.bytes());
         }
     }
 }
@@ -449,6 +448,28 @@ mod tests {
         let c = pixel_edit(&mut p, 0, IRect::new(0, 0, 2, 2), 1);
         h.push_applied(c);
         assert!(!h.can_redo());
+    }
+
+    #[test]
+    fn discarded_redo_entries_do_not_count_against_the_budget() {
+        let mut p = Project::new("t", 2048, 2048);
+        let mut h = History::new();
+        let big = IRect::new(0, 0, 2048, 2048); // 32 MiB per entry
+        let keep = pixel_edit(&mut p, 0, IRect::new(0, 0, 4, 4), 5);
+        h.push_applied(keep);
+        // Repeatedly make a huge edit, undo it, then replace it with a tiny one.
+        for i in 0..20 {
+            let c = pixel_edit(&mut p, 0, big, 10 + i);
+            h.push_applied(c);
+            h.undo(&mut p);
+            let tiny = pixel_edit(&mut p, 0, IRect::new(0, 0, 2, 2), 1);
+            h.push_applied(tiny);
+        }
+        assert_eq!(
+            h.len(),
+            21,
+            "all the small edits and the first one are still undoable"
+        );
     }
 
     #[test]

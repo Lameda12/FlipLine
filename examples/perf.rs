@@ -185,8 +185,8 @@ fn main() {
     let _ = frame_ms;
 }
 
-/// `eframe::Frame` cannot be constructed outside eframe; the app never reads it, so we hand it
-/// an uninitialised placeholder in this benchmark only.
+/// `eframe::Frame` cannot be built outside eframe; the app never reads it, so the benchmark uses
+/// eframe's headless test constructor.
 fn unsafe_frame() -> eframe::Frame {
     eframe::Frame::_new_kittest()
 }
