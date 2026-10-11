@@ -98,7 +98,7 @@ fn visuals(dark: bool) -> Visuals {
     w.noninteractive.fg_stroke = Stroke::new(1.0, p.text);
     w.noninteractive.corner_radius = r;
 
-    w.inactive.bg_fill = p.rail;
+    w.inactive.bg_fill = p.line;
     w.inactive.weak_bg_fill = p.rail;
     w.inactive.bg_stroke = Stroke::new(1.0, p.line);
     w.inactive.fg_stroke = Stroke::new(1.0, p.text);
