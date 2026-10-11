@@ -121,12 +121,7 @@ pub fn pixmap_to_straight(pm: &Pixmap) -> Vec<u8> {
     let mut out = Vec::with_capacity(pm.data().len());
     for px in pm.data().chunks_exact(4) {
         let a = px[3];
-        out.extend_from_slice(&[
-            demul_u8(px[0], a),
-            demul_u8(px[1], a),
-            demul_u8(px[2], a),
-            a,
-        ]);
+        out.extend_from_slice(&[demul_u8(px[0], a), demul_u8(px[1], a), demul_u8(px[2], a), a]);
     }
     out
 }
@@ -157,12 +152,7 @@ pub fn flatten_over(pm: Option<&Pixmap>, w: u32, h: u32, bg: [u8; 3]) -> Vec<u8>
             for px in pm.data().chunks_exact(4) {
                 let inv = 255 - px[3] as u32;
                 let blend = |s: u8, d: u8| (s as u32 + (d as u32 * inv + 127) / 255).min(255) as u8;
-                out.extend_from_slice(&[
-                    blend(px[0], bg[0]),
-                    blend(px[1], bg[1]),
-                    blend(px[2], bg[2]),
-                    255,
-                ]);
+                out.extend_from_slice(&[blend(px[0], bg[0]), blend(px[1], bg[1]), blend(px[2], bg[2]), 255]);
             }
         }
         None => {

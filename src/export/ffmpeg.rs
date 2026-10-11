@@ -76,7 +76,9 @@ pub struct Mp4Stage {
 impl Mp4Stage {
     pub fn new(snap: &Snapshot, opts: &ExportOptions, dest: &Dest) -> Result<Self, ExportError> {
         if cfg!(target_arch = "wasm32") {
-            return Err(ExportError::Unsupported("MP4 export needs the desktop app".into()));
+            return Err(ExportError::Unsupported(
+                "MP4 export needs the desktop app".into(),
+            ));
         }
         let Dest::File(path) = dest else {
             return Err(ExportError::Unsupported("MP4 needs a file destination".into()));
@@ -103,7 +105,7 @@ impl Mp4Stage {
         });
         let mut order = Vec::new();
         for (i, f) in snap.frames.iter().enumerate() {
-            order.extend(std::iter::repeat(i).take(f.hold as usize));
+            order.extend(std::iter::repeat_n(i, f.hold as usize));
         }
         Ok(Self {
             child: Some(child),
@@ -130,9 +132,17 @@ impl Mp4Stage {
         if let Some(t) = self.stderr.take() {
             let _ = t.join();
         }
-        let text = self.err_text.lock().map(|g| g.trim().to_string()).unwrap_or_default();
+        let text = self
+            .err_text
+            .lock()
+            .map(|g| g.trim().to_string())
+            .unwrap_or_default();
         let _ = std::fs::remove_file(&self.path);
-        ExportError::Ffmpeg(if text.is_empty() { fallback.to_string() } else { text })
+        ExportError::Ffmpeg(if text.is_empty() {
+            fallback.to_string()
+        } else {
+            text
+        })
     }
 
     pub fn step(&mut self, snap: &Snapshot) -> Result<Step, ExportError> {
@@ -165,9 +175,17 @@ impl Mp4Stage {
                 ..Default::default()
             })),
             _ => {
-                let text = self.err_text.lock().map(|g| g.trim().to_string()).unwrap_or_default();
+                let text = self
+                    .err_text
+                    .lock()
+                    .map(|g| g.trim().to_string())
+                    .unwrap_or_default();
                 let _ = std::fs::remove_file(&self.path);
-                Err(ExportError::Ffmpeg(if text.is_empty() { "ffmpeg failed".into() } else { text }))
+                Err(ExportError::Ffmpeg(if text.is_empty() {
+                    "ffmpeg failed".into()
+                } else {
+                    text
+                }))
             }
         }
     }
@@ -209,9 +227,13 @@ mod tests {
         let f = p.new_blank_frame();
         p.insert_frame(1, f);
         let path = std::env::temp_dir().join(format!("flipline-test-{}.mp4", std::process::id()));
-        let res = ExportJob::new(p.snapshot(), ExportOptions::new(Format::Mp4), Dest::File(path.clone()))
-            .unwrap()
-            .run();
+        let res = ExportJob::new(
+            p.snapshot(),
+            ExportOptions::new(Format::Mp4),
+            Dest::File(path.clone()),
+        )
+        .unwrap()
+        .run();
         match res {
             Ok(_) => {
                 let len = std::fs::metadata(&path).unwrap().len();
@@ -233,7 +255,8 @@ mod tests {
         }
         let p = Project::new("vid", 16, 16);
         let bad = std::path::PathBuf::from("/nonexistent-dir-xyz/out.mp4");
-        let err = ExportJob::new(p.snapshot(), ExportOptions::new(Format::Mp4), Dest::File(bad)).and_then(|j| j.run());
+        let err = ExportJob::new(p.snapshot(), ExportOptions::new(Format::Mp4), Dest::File(bad))
+            .and_then(|j| j.run());
         assert!(err.is_err());
     }
 }

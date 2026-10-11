@@ -103,7 +103,11 @@ pub fn compose_onion(w: u32, h: u32, layers: &[OnionLayer]) -> Pixmap {
         let Some(src) = layer.pixmap else { continue };
         let d = layer.distance.unsigned_abs().clamp(1, 3) as usize;
         let fade = (ONION_FADE[d - 1] * 255.0).round() as u32;
-        let tint = if layer.distance < 0 { ONION_PAST } else { ONION_FUTURE };
+        let tint = if layer.distance < 0 {
+            ONION_PAST
+        } else {
+            ONION_FUTURE
+        };
         let dst = out.data_mut();
         for (s, o) in src.data().chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
             let a = s[3] as u32;
@@ -162,7 +166,13 @@ pub struct OnionCache {
 
 impl OnionCache {
     /// Returns the onion texture for the current state, rebuilding only if the key changed.
-    pub fn get(&mut self, ctx: &Context, project: &Project, current: usize, depth: u8) -> Option<TextureHandle> {
+    pub fn get(
+        &mut self,
+        ctx: &Context,
+        project: &Project,
+        current: usize,
+        depth: u8,
+    ) -> Option<TextureHandle> {
         let key = onion_key(project, current, depth)?;
         if self.key.as_ref() == Some(&key) {
             return self.texture.clone();
@@ -218,10 +228,14 @@ pub fn make_thumbnail(pm: Option<&Pixmap>, w: u32, h: u32, paper: [u8; 3]) -> Co
     let mut rgba = vec![0u8; (tw * th * 4) as usize];
     for ty in 0..th {
         let y0 = (ty as u64 * h as u64 / th as u64) as usize;
-        let y1 = (((ty + 1) as u64 * h as u64 / th as u64) as usize).max(y0 + 1).min(h as usize);
+        let y1 = (((ty + 1) as u64 * h as u64 / th as u64) as usize)
+            .max(y0 + 1)
+            .min(h as usize);
         for tx in 0..tw {
             let x0 = (tx as u64 * w as u64 / tw as u64) as usize;
-            let x1 = (((tx + 1) as u64 * w as u64 / tw as u64) as usize).max(x0 + 1).min(w as usize);
+            let x1 = (((tx + 1) as u64 * w as u64 / tw as u64) as usize)
+                .max(x0 + 1)
+                .min(w as usize);
             let mut sum = [0u32; 4];
             if let Some(pm) = pm {
                 let data = pm.data();
@@ -268,7 +282,9 @@ pub fn update_thumbnails(ctx: &Context, project: &mut Project, skip: Option<Fram
         let img = make_thumbnail(f.pixmap(), w, h, paper);
         match &mut f.gpu.thumb {
             Some(t) => t.set(img, TextureOptions::LINEAR),
-            None => f.gpu.thumb = Some(ctx.load_texture(format!("thumb-{}", f.id.0), img, TextureOptions::LINEAR)),
+            None => {
+                f.gpu.thumb = Some(ctx.load_texture(format!("thumb-{}", f.id.0), img, TextureOptions::LINEAR))
+            }
         }
         f.gpu.thumb_rev = f.rev();
         done += 1;
@@ -297,18 +313,48 @@ mod tests {
     fn onion_tints_past_red_future_green_and_fades_with_distance() {
         let black = solid(4, 4, [0, 0, 0, 255]);
         let layers = [
-            OnionLayer { distance: -1, pixmap: Some(&black) },
-            OnionLayer { distance: -3, pixmap: Some(&black) },
+            OnionLayer {
+                distance: -1,
+                pixmap: Some(&black),
+            },
+            OnionLayer {
+                distance: -3,
+                pixmap: Some(&black),
+            },
         ];
         let out = compose_onion(4, 4, &layers);
         let near = out.pixel(0, 0).unwrap();
-        assert!(near.red() > near.green() && near.red() > near.blue(), "past is red");
+        assert!(
+            near.red() > near.green() && near.red() > near.blue(),
+            "past is red"
+        );
 
-        let only_far = compose_onion(4, 4, &[OnionLayer { distance: -3, pixmap: Some(&black) }]);
-        let only_near = compose_onion(4, 4, &[OnionLayer { distance: -1, pixmap: Some(&black) }]);
+        let only_far = compose_onion(
+            4,
+            4,
+            &[OnionLayer {
+                distance: -3,
+                pixmap: Some(&black),
+            }],
+        );
+        let only_near = compose_onion(
+            4,
+            4,
+            &[OnionLayer {
+                distance: -1,
+                pixmap: Some(&black),
+            }],
+        );
         assert!(only_far.pixel(0, 0).unwrap().alpha() < only_near.pixel(0, 0).unwrap().alpha());
 
-        let fut = compose_onion(4, 4, &[OnionLayer { distance: 2, pixmap: Some(&black) }]);
+        let fut = compose_onion(
+            4,
+            4,
+            &[OnionLayer {
+                distance: 2,
+                pixmap: Some(&black),
+            }],
+        );
         let p = fut.pixel(0, 0).unwrap();
         assert!(p.green() > p.red(), "future is green");
     }
@@ -316,7 +362,14 @@ mod tests {
     #[test]
     fn onion_ignores_transparent_pixels() {
         let clear = Pixmap::new(4, 4).unwrap();
-        let out = compose_onion(4, 4, &[OnionLayer { distance: 1, pixmap: Some(&clear) }]);
+        let out = compose_onion(
+            4,
+            4,
+            &[OnionLayer {
+                distance: 1,
+                pixmap: Some(&clear),
+            }],
+        );
         assert!(out.data().iter().all(|&b| b == 0));
     }
 
@@ -329,13 +382,25 @@ mod tests {
         }
         let k0 = onion_key(&p, 2, 2).unwrap();
         p.frame_mut(2).unwrap().touch(None); // drawing on the current frame
-        assert_eq!(onion_key(&p, 2, 2).unwrap(), k0, "current frame's pixels are not an input");
+        assert_eq!(
+            onion_key(&p, 2, 2).unwrap(),
+            k0,
+            "current frame's pixels are not an input"
+        );
 
         p.frame_mut(1).unwrap().touch(None); // neighbour changed
         assert_ne!(onion_key(&p, 2, 2).unwrap(), k0);
 
-        assert_ne!(onion_key(&p, 2, 1).unwrap(), onion_key(&p, 2, 2).unwrap(), "depth is an input");
-        assert_ne!(onion_key(&p, 3, 2).unwrap(), onion_key(&p, 2, 2).unwrap(), "current index is an input");
+        assert_ne!(
+            onion_key(&p, 2, 1).unwrap(),
+            onion_key(&p, 2, 2).unwrap(),
+            "depth is an input"
+        );
+        assert_ne!(
+            onion_key(&p, 3, 2).unwrap(),
+            onion_key(&p, 2, 2).unwrap(),
+            "current index is an input"
+        );
     }
 
     #[test]

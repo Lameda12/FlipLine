@@ -12,7 +12,13 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
         let events = ctx.input(|i| i.events.clone());
         let now = ctx.input(|i| i.time);
         for ev in events {
-            if let Event::Key { key: Key::Space, pressed, repeat, .. } = ev {
+            if let Event::Key {
+                key: Key::Space,
+                pressed,
+                repeat,
+                ..
+            } = ev
+            {
                 if pressed && !repeat {
                     app.input.space_down = true;
                     app.input.space_used = false;
@@ -94,7 +100,11 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
     if k(plain, Key::Minus) {
         app.change_hold(-1);
     }
-    if k(plain, Key::Equals) || k(Modifiers::SHIFT, Key::Equals) || k(plain, Key::Plus) || k(Modifiers::SHIFT, Key::Plus) {
+    if k(plain, Key::Equals)
+        || k(Modifiers::SHIFT, Key::Equals)
+        || k(plain, Key::Plus)
+        || k(Modifiers::SHIFT, Key::Plus)
+    {
         app.change_hold(1);
     }
     if k(plain, Key::O) {
@@ -106,7 +116,11 @@ pub fn handle(app: &mut FlipLineApp, ctx: &Context) {
     if k(plain, Key::Num1) {
         app.view.request = Some(crate::app::ZoomRequest::Actual);
     }
-    if k(plain, Key::F1) || k(Modifiers::SHIFT, Key::Slash) || k(plain, Key::Questionmark) || k(Modifiers::SHIFT, Key::Questionmark) {
+    if k(plain, Key::F1)
+        || k(Modifiers::SHIFT, Key::Slash)
+        || k(plain, Key::Questionmark)
+        || k(Modifiers::SHIFT, Key::Questionmark)
+    {
         app.ui.help = !app.ui.help;
     }
     if k(plain, Key::Escape) {

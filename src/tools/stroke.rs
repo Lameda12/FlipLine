@@ -168,12 +168,7 @@ fn capsule_path(a: (f32, f32, f32), b: (f32, f32, f32)) -> Option<tiny_skia::Pat
 }
 
 /// Draws a dot or a tapered segment. Returns the pixel bounds touched.
-pub fn stamp(
-    pm: &mut Pixmap,
-    paint: &Paint,
-    a: (f32, f32, f32),
-    b: Option<(f32, f32, f32)>,
-) -> IRect {
+pub fn stamp(pm: &mut Pixmap, paint: &Paint, a: (f32, f32, f32), b: Option<(f32, f32, f32)>) -> IRect {
     let path = match b {
         Some(b) => capsule_path(a, b),
         None => PathBuilder::from_circle(a.0, a.1, a.2),
@@ -214,10 +209,7 @@ struct Active {
 
 impl StrokeEngine {
     pub fn new(erase: bool) -> Self {
-        Self {
-            erase,
-            active: None,
-        }
+        Self { erase, active: None }
     }
 
     pub fn is_active(&self) -> bool {
@@ -225,8 +217,10 @@ impl StrokeEngine {
     }
 
     fn make_paint(&self, s: &ToolSettings) -> Paint<'static> {
-        let mut paint = Paint::default();
-        paint.anti_alias = true;
+        let mut paint = Paint {
+            anti_alias: true,
+            ..Paint::default()
+        };
         if self.erase {
             paint.blend_mode = BlendMode::Clear;
             paint.set_color(Color::BLACK);
@@ -376,11 +370,20 @@ mod tests {
     #[test]
     fn stroke_draws_and_produces_a_rect_limited_undo_entry() {
         let mut f = Frame::blank(FrameId(1), 200, 100);
-        let edit = run_stroke(false, &mut f, &[(20.0, 50.0, 1.0), (60.0, 50.0, 1.0), (100.0, 50.0, 1.0)]).unwrap();
+        let edit = run_stroke(
+            false,
+            &mut f,
+            &[(20.0, 50.0, 1.0), (60.0, 50.0, 1.0), (100.0, 50.0, 1.0)],
+        )
+        .unwrap();
         let pm = f.pixmap().unwrap();
         assert_eq!(pm.pixel(60, 50).unwrap().alpha(), 255);
         assert_eq!(pm.pixel(60, 10).unwrap().alpha(), 0);
-        assert!(edit.rect.width() < 200 && edit.rect.height() < 30, "{:?}", edit.rect);
+        assert!(
+            edit.rect.width() < 200 && edit.rect.height() < 30,
+            "{:?}",
+            edit.rect
+        );
         assert_eq!(edit.before.len(), edit.rect.area_bytes());
         assert!(edit.before.iter().all(|&b| b == 0));
     }
@@ -388,10 +391,29 @@ mod tests {
     #[test]
     fn variable_pressure_gives_a_thicker_end_than_start() {
         let mut f = Frame::blank(FrameId(1), 200, 100);
-        run_stroke(false, &mut f, &[(20.0, 50.0, 0.1), (60.0, 50.0, 0.5), (110.0, 50.0, 1.0), (130.0, 50.0, 1.0)]).unwrap();
+        run_stroke(
+            false,
+            &mut f,
+            &[
+                (20.0, 50.0, 0.1),
+                (60.0, 50.0, 0.5),
+                (110.0, 50.0, 1.0),
+                (130.0, 50.0, 1.0),
+            ],
+        )
+        .unwrap();
         let pm = f.pixmap().unwrap();
-        let thickness = |x: u32| (0..100).filter(|&y| pm.pixel(x, y).unwrap().alpha() > 128).count();
-        assert!(thickness(110) > thickness(30) + 2, "{} vs {}", thickness(110), thickness(30));
+        let thickness = |x: u32| {
+            (0..100)
+                .filter(|&y| pm.pixel(x, y).unwrap().alpha() > 128)
+                .count()
+        };
+        assert!(
+            thickness(110) > thickness(30) + 2,
+            "{} vs {}",
+            thickness(110),
+            thickness(30)
+        );
     }
 
     #[test]

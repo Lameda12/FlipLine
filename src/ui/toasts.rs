@@ -15,13 +15,21 @@ pub struct Toasts {
 
 impl Toasts {
     pub fn info(&mut self, text: impl Into<String>) {
-        self.items.push(Toast { text: text.into(), error: false, born: None });
+        self.items.push(Toast {
+            text: text.into(),
+            error: false,
+            born: None,
+        });
     }
 
     pub fn error(&mut self, text: impl Into<String>) {
         let text = text.into();
         log::warn!("{text}");
-        self.items.push(Toast { text, error: true, born: None });
+        self.items.push(Toast {
+            text,
+            error: true,
+            born: None,
+        });
     }
 
     pub fn show(&mut self, ctx: &Context) {
@@ -32,7 +40,8 @@ impl Toasts {
         for t in &mut self.items {
             t.born.get_or_insert(now);
         }
-        self.items.retain(|t| now - t.born.unwrap_or(now) < if t.error { 8.0 } else { 3.5 });
+        self.items
+            .retain(|t| now - t.born.unwrap_or(now) < if t.error { 8.0 } else { 3.5 });
         let pal = Palette::of(ctx);
         egui::Area::new(Id::new("toasts"))
             .anchor(Align2::RIGHT_TOP, egui::vec2(-16.0, 62.0))
@@ -47,10 +56,16 @@ impl Toasts {
                         .stroke(egui::Stroke::new(1.0, pal.line))
                         .corner_radius(8)
                         .inner_margin(egui::Margin::symmetric(12, 8))
-                        .shadow(egui::Shadow { offset: [0, 3], blur: 12, spread: 0, color: egui::Color32::from_black_alpha(60) })
+                        .shadow(egui::Shadow {
+                            offset: [0, 3],
+                            blur: 12,
+                            spread: 0,
+                            color: egui::Color32::from_black_alpha(60),
+                        })
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
-                                let (r, _) = ui.allocate_exact_size(egui::vec2(4.0, 16.0), egui::Sense::hover());
+                                let (r, _) =
+                                    ui.allocate_exact_size(egui::vec2(4.0, 16.0), egui::Sense::hover());
                                 ui.painter().rect_filled(r, 2.0, accent);
                                 ui.label(RichText::new(&t.text).color(pal.text));
                             });

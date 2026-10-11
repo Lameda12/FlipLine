@@ -345,7 +345,14 @@ mod tests {
         let mut p = Project::new("t", 64, 64);
         let mut h = History::new();
         // Seed non-trivial content so "before" is not all zeros.
-        for (i, b) in p.frame_mut(0).unwrap().pixmap_mut().data_mut().iter_mut().enumerate() {
+        for (i, b) in p
+            .frame_mut(0)
+            .unwrap()
+            .pixmap_mut()
+            .data_mut()
+            .iter_mut()
+            .enumerate()
+        {
             *b = (i * 7 % 251) as u8;
         }
         let original = p.frame(0).unwrap().pixmap().unwrap().data().to_vec();
@@ -453,7 +460,10 @@ mod tests {
             let c = pixel_edit(&mut p, 0, rect, i + 1);
             h.push_applied(c);
         }
-        assert!(h.len() < 8, "oldest full-frame edits are evicted by the byte budget");
-        assert!(h.len() >= 1);
+        assert!(
+            h.len() < 8,
+            "oldest full-frame edits are evicted by the byte budget"
+        );
+        assert!(!h.is_empty());
     }
 }

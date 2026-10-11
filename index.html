@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="FlipLine: a free, open-source frame-by-frame 2D animation editor." />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f0ece2" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1e20" />
+    <title>FlipLine</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+    <link data-trunk rel="rust" data-bin="flipline" data-wasm-opt="z" />
+    <link data-trunk rel="copy-file" href="web/favicon.svg" />
+
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #f0ece2; }
+      @media (prefers-color-scheme: dark) { html, body { background: #1c1e20; } }
+      canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; outline: none; }
+      #loading {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font: 600 15px/1.4 system-ui, sans-serif; color: #706b5d; letter-spacing: .02em;
+      }
+      @media (prefers-color-scheme: dark) { #loading { color: #9a978c; } }
+    </style>
+  </head>
+  <body>
+    <canvas id="flipline_canvas"></canvas>
+    <div id="loading">Loading FlipLine…</div>
+  </body>
+</html>

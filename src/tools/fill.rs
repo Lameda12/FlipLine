@@ -215,7 +215,13 @@ impl Tool for FillTool {
     }
 
     fn begin(&mut self, frame: &mut Frame, s: &ToolSettings, at: Sample) -> ToolOutput {
-        match flood_fill(frame, at.x.floor() as i32, at.y.floor() as i32, s.color, s.tolerance) {
+        match flood_fill(
+            frame,
+            at.x.floor() as i32,
+            at.y.floor() as i32,
+            s.color,
+            s.tolerance,
+        ) {
             Some(edit) => ToolOutput::Commit(Box::new(edit)),
             None => ToolOutput::None,
         }
@@ -300,7 +306,10 @@ mod tests {
         assert!(core.red() < 60, "ink not covered: {:?}", core);
         // Interior is the fill colour.
         let mid = f.pixmap().unwrap().pixel(50, 50).unwrap();
-        assert_eq!((mid.red(), mid.green(), mid.blue(), mid.alpha()), (230, 80, 40, 255));
+        assert_eq!(
+            (mid.red(), mid.green(), mid.blue(), mid.alpha()),
+            (230, 80, 40, 255)
+        );
     }
 
     #[test]
@@ -375,7 +384,7 @@ mod tests {
             f.pixmap_mut().data_mut()[idx..idx + 4].copy_from_slice(&[0, 0, 0, 255]);
         }
         let r = compute_region(f.pixmap().unwrap(), 9, 0, 0).unwrap();
-        assert_eq!(r.mask[0 * 10 + 1], IN_REGION);
-        assert_eq!(r.mask[1 * 10 + 0], 0, "other side of the diagonal wall");
+        assert_eq!(r.mask[1], IN_REGION);
+        assert_eq!(r.mask[10], 0, "other side of the diagonal wall");
     }
 }

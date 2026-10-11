@@ -43,7 +43,15 @@ impl Autosave {
     }
 
     /// Kicks off an autosave if the project changed and enough time passed.
-    pub fn maybe_run(&mut self, now: f64, generation: u64, busy: bool, snap: impl FnOnce() -> Snapshot, tx: &Sender<Msg>, ctx: &Context) {
+    pub fn maybe_run(
+        &mut self,
+        now: f64,
+        generation: u64,
+        busy: bool,
+        snap: impl FnOnce() -> Snapshot,
+        tx: &Sender<Msg>,
+        ctx: &Context,
+    ) {
         if busy || self.in_flight || generation == self.saved_gen || now - self.last_run < INTERVAL_SECS {
             return;
         }

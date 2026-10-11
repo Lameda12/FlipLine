@@ -37,7 +37,10 @@ pub fn natural_cmp(a: &str, b: &str) -> Ordering {
                 }
             }
             (Some(x), Some(y)) => {
-                let (lx, ly) = (x.to_lowercase().next().unwrap_or(x), y.to_lowercase().next().unwrap_or(y));
+                let (lx, ly) = (
+                    x.to_lowercase().next().unwrap_or(x),
+                    y.to_lowercase().next().unwrap_or(y),
+                );
                 if lx != ly {
                     return lx.cmp(&ly);
                 }
@@ -67,7 +70,10 @@ mod tests {
 
     #[test]
     fn handles_padding_case_and_mixed_segments() {
-        assert_eq!(sorted(vec!["b_002", "B_001", "a_10", "a_9"]), ["a_9", "a_10", "B_001", "b_002"]);
+        assert_eq!(
+            sorted(vec!["b_002", "B_001", "a_10", "a_9"]),
+            ["a_9", "a_10", "B_001", "b_002"]
+        );
         assert_eq!(sorted(vec!["x0010", "x010", "x10"]).len(), 3);
         assert_eq!(natural_cmp("img", "img1"), Ordering::Less);
         assert_eq!(natural_cmp("a", "a"), Ordering::Equal);

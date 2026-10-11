@@ -13,7 +13,11 @@ fn main() -> eframe::Result {
             .with_drag_and_drop(true),
         ..Default::default()
     };
-    eframe::run_native("FlipLine", options, Box::new(|cc| Ok(Box::new(FlipLineApp::new(cc)))))
+    eframe::run_native(
+        "FlipLine",
+        options,
+        Box::new(|cc| Ok(Box::new(FlipLineApp::new(cc)))),
+    )
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -29,7 +33,11 @@ fn main() {
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .expect("#flipline_canvas is not a canvas");
         let result = eframe::WebRunner::new()
-            .start(canvas, web_options, Box::new(|cc| Ok(Box::new(FlipLineApp::new(cc)))))
+            .start(
+                canvas,
+                web_options,
+                Box::new(|cc| Ok(Box::new(FlipLineApp::new(cc)))),
+            )
             .await;
         if let Some(loading) = document.get_element_by_id("loading") {
             match result {

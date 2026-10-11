@@ -22,7 +22,11 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
     Panel::left("tool_rail")
         .exact_size(92.0)
         .resizable(false)
-        .frame(Frame::new().fill(pal.rail).inner_margin(Margin::symmetric(10, 12)))
+        .frame(
+            Frame::new()
+                .fill(pal.rail)
+                .inner_margin(Margin::symmetric(10, 12)),
+        )
         .show(ui, |ui| {
             ui.spacing_mut().item_spacing = egui::vec2(6.0, 6.0);
             w::label_caps(ui, "Tools");
@@ -65,25 +69,44 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
             ui.add_space(8.0);
             w::label_caps(ui, "Size");
             ui.spacing_mut().slider_width = 70.0;
-            ui.add(Slider::new(&mut app.settings.size, MIN_SIZE..=MAX_SIZE).show_value(false).step_by(1.0));
-            ui.label(RichText::new(format!("{:.0} px", app.settings.size)).monospace().color(pal.dim));
+            ui.add(
+                Slider::new(&mut app.settings.size, MIN_SIZE..=MAX_SIZE)
+                    .show_value(false)
+                    .step_by(1.0),
+            );
+            ui.label(
+                RichText::new(format!("{:.0} px", app.settings.size))
+                    .monospace()
+                    .color(pal.dim),
+            );
             // Live preview of the stroke width.
             let (r, _) = ui.allocate_exact_size(egui::vec2(70.0, 26.0), egui::Sense::hover());
             ui.painter().rect_filled(r, 6.0, pal.cell);
             ui.painter().circle_filled(
                 r.center(),
                 (app.settings.size * 0.5).clamp(0.6, 12.5),
-                if app.tool == ToolId::Eraser { pal.dim } else { color32(app.settings.color) },
+                if app.tool == ToolId::Eraser {
+                    pal.dim
+                } else {
+                    color32(app.settings.color)
+                },
             );
 
             if app.tool == ToolId::Fill {
                 ui.add_space(8.0);
                 w::label_caps(ui, "Tolerance");
                 let mut t = app.settings.tolerance as f32;
-                if ui.add(Slider::new(&mut t, 0.0..=128.0).show_value(false)).changed() {
+                if ui
+                    .add(Slider::new(&mut t, 0.0..=128.0).show_value(false))
+                    .changed()
+                {
                     app.settings.tolerance = t as u8;
                 }
-                ui.label(RichText::new(format!("{}", app.settings.tolerance)).monospace().color(pal.dim));
+                ui.label(
+                    RichText::new(format!("{}", app.settings.tolerance))
+                        .monospace()
+                        .color(pal.dim),
+                );
             }
 
             ui.add_space(8.0);

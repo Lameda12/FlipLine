@@ -40,10 +40,28 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                 }
 
                 ui.add_space(10.0);
-                if w::icon_button_en(ui, 30.0, false, app.history.can_undo(), "Undo (Ctrl/Cmd+Z)", w::icon_undo).clicked() {
+                if w::icon_button_en(
+                    ui,
+                    30.0,
+                    false,
+                    app.history.can_undo(),
+                    "Undo (Ctrl/Cmd+Z)",
+                    w::icon_undo,
+                )
+                .clicked()
+                {
                     app.undo();
                 }
-                if w::icon_button_en(ui, 30.0, false, app.history.can_redo(), "Redo (Shift+Ctrl/Cmd+Z)", w::icon_redo).clicked() {
+                if w::icon_button_en(
+                    ui,
+                    30.0,
+                    false,
+                    app.history.can_redo(),
+                    "Redo (Shift+Ctrl/Cmd+Z)",
+                    w::icon_redo,
+                )
+                .clicked()
+                {
                     app.redo();
                 }
                 ui.add_space(10.0);
@@ -57,7 +75,10 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                             .unwrap_or(0),
                     });
                 }
-                if w::pill(ui, "Open", false).on_hover_text("Open a .flipline project").clicked() {
+                if w::pill(ui, "Open", false)
+                    .on_hover_text("Open a .flipline project")
+                    .clicked()
+                {
                     crate::platform::pick_project(app.sender(), ctx.clone());
                 }
                 if w::pill(ui, "Import", false)
@@ -66,10 +87,16 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                 {
                     crate::platform::pick_images(app.sender(), ctx.clone());
                 }
-                if w::pill(ui, "Save", false).on_hover_text("Save (Ctrl/Cmd+S)").clicked() {
+                if w::pill(ui, "Save", false)
+                    .on_hover_text("Save (Ctrl/Cmd+S)")
+                    .clicked()
+                {
                     app.save(&ctx, false);
                 }
-                if w::accent_button(ui, "Export").on_hover_text("Export (Ctrl/Cmd+E)").clicked() {
+                if w::accent_button(ui, "Export")
+                    .on_hover_text("Export (Ctrl/Cmd+E)")
+                    .clicked()
+                {
                     app.open_export_dialog();
                 }
 
@@ -83,7 +110,10 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                         app.view.request = Some(ZoomRequest::By(1.25));
                     }
                     let pct = format!("{:.0}%", app.view.zoom * 100.0);
-                    let r = ui.add(egui::Label::new(RichText::new(pct).monospace().color(pal.dim)).sense(egui::Sense::click()));
+                    let r = ui.add(
+                        egui::Label::new(RichText::new(pct).monospace().color(pal.dim))
+                            .sense(egui::Sense::click()),
+                    );
                     if r.on_hover_text("Click for 100%").clicked() {
                         app.view.request = Some(ZoomRequest::Actual);
                     }

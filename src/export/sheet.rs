@@ -29,14 +29,20 @@ pub fn grid_for(n: usize) -> (usize, usize) {
 impl SheetStage {
     pub fn new(snap: &Snapshot, opts: &ExportOptions, dest: Dest) -> Result<Self, ExportError> {
         if matches!(dest, Dest::Dir(_)) {
-            return Err(ExportError::Unsupported("sprite sheet needs a file destination".into()));
+            return Err(ExportError::Unsupported(
+                "sprite sheet needs a file destination".into(),
+            ));
         }
         let (cols, rows) = grid_for(snap.frames.len());
         let cell = opts.scale.dims(snap.width, snap.height);
         let (w, h) = (cols as u64 * cell.0 as u64, rows as u64 * cell.1 as u64);
         let bytes = w * h * 4;
         if w > MAX_SIDE || h > MAX_SIDE || bytes > MAX_BYTES {
-            return Err(ExportError::SheetTooLarge { w, h, mb: bytes / (1024 * 1024) });
+            return Err(ExportError::SheetTooLarge {
+                w,
+                h,
+                mb: bytes / (1024 * 1024),
+            });
         }
         Ok(Self {
             dest,
@@ -68,7 +74,12 @@ impl SheetStage {
         let png = encode_png_rgba(sheet_w as u32, (self.rows * ch) as u32, &self.sheet)
             .map_err(|e| ExportError::Unsupported(e.to_string()))?;
         let mut out = ExportOutput {
-            summary: format!("Exported {}×{} sprite sheet ({} frames)", self.cols, self.rows, snap.frames.len()),
+            summary: format!(
+                "Exported {}×{} sprite sheet ({} frames)",
+                self.cols,
+                self.rows,
+                snap.frames.len()
+            ),
             ..Default::default()
         };
         match &self.dest {
@@ -114,7 +125,10 @@ mod tests {
         }
         p.remove_frame(0); // frames 1..=4, each a solid red level
         let opts = ExportOptions::new(Format::SpriteSheet);
-        let out = ExportJob::new(p.snapshot(), opts, Dest::Memory).unwrap().run().unwrap();
+        let out = ExportJob::new(p.snapshot(), opts, Dest::Memory)
+            .unwrap()
+            .run()
+            .unwrap();
         let img = image::load_from_memory(&out.files[0].1).unwrap().to_rgba8();
         assert_eq!((img.width(), img.height()), (20, 12), "2x2 grid of 10x6 cells");
         assert_eq!(img.get_pixel(0, 0).0, [40, 0, 0, 255]);
@@ -133,13 +147,21 @@ mod tests {
             p.insert_frame(at, f);
         }
         // 3 frames -> 2x2 grid, bottom-right empty.
-        let out = ExportJob::new(p.snapshot(), ExportOptions::new(Format::SpriteSheet), Dest::Memory)
-            .unwrap()
-            .run()
-            .unwrap();
+        let out = ExportJob::new(
+            p.snapshot(),
+            ExportOptions::new(Format::SpriteSheet),
+            Dest::Memory,
+        )
+        .unwrap()
+        .run()
+        .unwrap();
         let img = image::load_from_memory(&out.files[0].1).unwrap().to_rgba8();
         assert_eq!(img.get_pixel(7, 7).0[3], 0);
-        assert_eq!(img.get_pixel(0, 0).0[3], 0, "first frame was blank -> transparent");
+        assert_eq!(
+            img.get_pixel(0, 0).0[3],
+            0,
+            "first frame was blank -> transparent"
+        );
         assert_eq!(img.get_pixel(5, 1).0, [0, 255, 0, 255]);
     }
 
@@ -151,7 +173,13 @@ mod tests {
             let at = p.len();
             p.insert_frame(at, f);
         }
-        let err = ExportJob::new(p.snapshot(), ExportOptions::new(Format::SpriteSheet), Dest::Memory).err().unwrap();
+        let err = ExportJob::new(
+            p.snapshot(),
+            ExportOptions::new(Format::SpriteSheet),
+            Dest::Memory,
+        )
+        .err()
+        .unwrap();
         assert!(matches!(err, ExportError::SheetTooLarge { .. }));
         assert!(err.to_string().contains("50%"));
         let mut half = ExportOptions::new(Format::SpriteSheet);

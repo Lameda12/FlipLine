@@ -79,8 +79,12 @@ impl PngCache {
 
 pub fn encode_png_rgba(w: u32, h: u32, rgba: &[u8]) -> Result<Vec<u8>, ProjectIoError> {
     let mut out = Vec::new();
-    PngEncoder::new_with_quality(&mut out, CompressionType::Fast, FilterType::Adaptive)
-        .write_image(rgba, w, h, ExtendedColorType::Rgba8)?;
+    PngEncoder::new_with_quality(&mut out, CompressionType::Fast, FilterType::Adaptive).write_image(
+        rgba,
+        w,
+        h,
+        ExtendedColorType::Rgba8,
+    )?;
     Ok(out)
 }
 
@@ -219,9 +223,9 @@ pub fn read_project<R: Read + Seek>(reader: R) -> Result<Project, ProjectIoError
     for fj in &json.frames {
         let mut bytes = Vec::new();
         {
-            let entry = zip.by_name(&fj.file).map_err(|_| {
-                ProjectIoError::Invalid(format!("missing frame file {}", fj.file))
-            })?;
+            let entry = zip
+                .by_name(&fj.file)
+                .map_err(|_| ProjectIoError::Invalid(format!("missing frame file {}", fj.file)))?;
             // A PNG of the largest accepted size is far below this; the cap bounds zip bombs.
             entry.take(512 * 1024 * 1024).read_to_end(&mut bytes)?;
         }
@@ -289,7 +293,13 @@ mod tests {
                 paint.set_color(Color::from_rgba8(200, 40 * i, 90, 180));
                 paint.anti_alias = true;
                 let path = PathBuilder::from_circle(30.5 + i as f32 * 7.0, 31.3, 17.7).unwrap();
-                pm.fill_path(&path, &paint, tiny_skia::FillRule::Winding, Transform::identity(), None);
+                pm.fill_path(
+                    &path,
+                    &paint,
+                    tiny_skia::FillRule::Winding,
+                    Transform::identity(),
+                    None,
+                );
             }
             f.set_hold(i + 1);
             let at = p.len();
@@ -311,7 +321,10 @@ mod tests {
         assert_eq!(q.len(), p.len());
         for (a, b) in p.frames().iter().zip(q.frames()) {
             assert_eq!(a.hold, b.hold);
-            let pa = a.pixmap().map(|p| p.data().to_vec()).unwrap_or_else(|| vec![0; 96 * 64 * 4]);
+            let pa = a
+                .pixmap()
+                .map(|p| p.data().to_vec())
+                .unwrap_or_else(|| vec![0; 96 * 64 * 4]);
             let pb = b.pixmap().unwrap().data();
             assert_eq!(pa, pb, "pixels must survive PNG round trip exactly");
         }
@@ -322,7 +335,9 @@ mod tests {
         let p = sample_project();
         let bytes = to_bytes(&p.snapshot(), None).unwrap();
         let mut zip = ZipArchive::new(Cursor::new(bytes)).unwrap();
-        let names: Vec<String> = (0..zip.len()).map(|i| zip.by_index(i).unwrap().name().unwrap().to_string()).collect();
+        let names: Vec<String> = (0..zip.len())
+            .map(|i| zip.by_index(i).unwrap().name().unwrap().to_string())
+            .collect();
         assert!(names.contains(&"project.json".to_string()));
         assert!(names.contains(&"frames/0001.png".to_string()));
         assert!(names.contains(&"frames/0004.png".to_string()));
@@ -352,7 +367,8 @@ mod tests {
         let mut buf = Cursor::new(Vec::new());
         {
             let mut z = ZipWriter::new(&mut buf);
-            z.start_file("project.json", SimpleFileOptions::default()).unwrap();
+            z.start_file("project.json", SimpleFileOptions::default())
+                .unwrap();
             z.write_all(br##"{"format":"flipline","version":1,"name":"x","width":999999,"height":10,"fps":12,"paper":"#fff","frames":[{"file":"frames/0001.png","hold":1}]}"##).unwrap();
             z.finish().unwrap();
         }
@@ -362,11 +378,15 @@ mod tests {
         let mut buf = Cursor::new(Vec::new());
         {
             let mut z = ZipWriter::new(&mut buf);
-            z.start_file("project.json", SimpleFileOptions::default()).unwrap();
+            z.start_file("project.json", SimpleFileOptions::default())
+                .unwrap();
             z.write_all(br##"{"format":"flipline","version":99,"name":"x","width":8,"height":8,"fps":12,"paper":"#fff","frames":[]}"##).unwrap();
             z.finish().unwrap();
         }
-        assert!(matches!(from_bytes(&buf.into_inner()), Err(ProjectIoError::TooNew(99))));
+        assert!(matches!(
+            from_bytes(&buf.into_inner()),
+            Err(ProjectIoError::TooNew(99))
+        ));
     }
 
     #[test]

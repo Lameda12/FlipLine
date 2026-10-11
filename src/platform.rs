@@ -22,11 +22,21 @@ pub struct PickedFile {
 
 /// Results of asynchronous platform work, drained by the app each frame.
 pub enum Msg {
-    ProjectOpened { name: String, bytes: Vec<u8>, path: Option<PathBuf> },
+    ProjectOpened {
+        name: String,
+        bytes: Vec<u8>,
+        path: Option<PathBuf>,
+    },
     ImagesPicked(Vec<PickedFile>),
-    ImagesDecoded { frames: Vec<tiny_skia::Pixmap>, errors: Vec<String> },
+    ImagesDecoded {
+        frames: Vec<tiny_skia::Pixmap>,
+        errors: Vec<String>,
+    },
     /// A project was written (or downloaded). `path` is `None` on the web.
-    Saved { path: Option<PathBuf>, name: String },
+    Saved {
+        path: Option<PathBuf>,
+        name: String,
+    },
     /// The user picked where an export should go.
     ExportDest(Dest),
     ExportDestCancelled,
@@ -35,6 +45,18 @@ pub enum Msg {
     FfmpegChecked(bool),
     Info(String),
     Error(String),
+}
+
+pub fn set_window_title(ctx: &Context, title: &str) {
+    #[cfg(not(target_arch = "wasm32"))]
+    ctx.send_viewport_cmd(eframe::egui::ViewportCommand::Title(title.to_owned()));
+    #[cfg(target_arch = "wasm32")]
+    {
+        let _ = ctx;
+        if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+            doc.set_title(title);
+        }
+    }
 }
 
 pub fn is_web() -> bool {
@@ -70,7 +92,13 @@ fn send(tx: &Sender<Msg>, ctx: &Context, m: Msg) {
 /// Reads dropped files (native: on a worker thread; web: asynchronously) and routes them:
 /// `.flipline` files open as projects, everything else is treated as an image to import.
 pub fn read_dropped(files: Vec<eframe::egui::DroppedFileHandle>, tx: Sender<Msg>, ctx: Context) {
-    fn route(tx: &Sender<Msg>, name: String, bytes: Vec<u8>, path: Option<PathBuf>, images: &mut Vec<PickedFile>) {
+    fn route(
+        tx: &Sender<Msg>,
+        name: String,
+        bytes: Vec<u8>,
+        path: Option<PathBuf>,
+        images: &mut Vec<PickedFile>,
+    ) {
         if name.to_lowercase().ends_with(".flipline") {
             let _ = tx.send(Msg::ProjectOpened { name, bytes, path });
         } else {
@@ -82,7 +110,10 @@ pub fn read_dropped(files: Vec<eframe::egui::DroppedFileHandle>, tx: Sender<Msg>
         let mut images = Vec::new();
         for f in files {
             let path = f.path().to_path_buf();
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             match f.bytes() {
                 Ok(bytes) => route(&tx, name, bytes, Some(path), &mut images),
                 Err(e) => {
@@ -99,7 +130,11 @@ pub fn read_dropped(files: Vec<eframe::egui::DroppedFileHandle>, tx: Sender<Msg>
     spawn(async move {
         let mut images = Vec::new();
         for f in files {
-            let name = f.path().file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = f
+                .path()
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             match f.bytes_async().await {
                 Ok(bytes) => route(&tx, name, bytes, None, &mut images),
                 Err(e) => {
@@ -134,7 +169,15 @@ pub fn pick_project(tx: Sender<Msg>, ctx: Context) {
             let path = Some(f.path().to_path_buf());
             #[cfg(target_arch = "wasm32")]
             let path = None;
-            send(&tx, &ctx, Msg::ProjectOpened { name: f.file_name(), bytes, path });
+            send(
+                &tx,
+                &ctx,
+                Msg::ProjectOpened {
+                    name: f.file_name(),
+                    bytes,
+                    path,
+                },
+            );
         }
     });
 }
@@ -149,7 +192,10 @@ pub fn pick_images(tx: Sender<Msg>, ctx: Context) {
         if let Some(files) = files {
             let mut out = Vec::with_capacity(files.len());
             for f in files {
-                out.push(PickedFile { name: f.file_name(), bytes: f.read().await });
+                out.push(PickedFile {
+                    name: f.file_name(),
+                    bytes: f.read().await,
+                });
             }
             send(&tx, &ctx, Msg::ImagesPicked(out));
         }
@@ -157,7 +203,13 @@ pub fn pick_images(tx: Sender<Msg>, ctx: Context) {
 }
 
 /// Saves the project. With `path` it writes directly; otherwise (or on the web) it asks.
-pub fn save_project(snap: Snapshot, path: Option<PathBuf>, tx: Sender<Msg>, ctx: Context, cache: crate::autosave::SharedCache) {
+pub fn save_project(
+    snap: Snapshot,
+    path: Option<PathBuf>,
+    tx: Sender<Msg>,
+    ctx: Context,
+    cache: crate::autosave::SharedCache,
+) {
     let encode = move |snap: Snapshot, cache: crate::autosave::SharedCache| {
         let mut guard = cache.lock().ok();
         crate::model::io::to_bytes(&snap, guard.as_deref_mut())
@@ -184,7 +236,14 @@ pub fn save_project(snap: Snapshot, path: Option<PathBuf>, tx: Sender<Msg>, ctx:
             let name = snap.name.clone();
             match encode(snap, cache) {
                 Ok(bytes) => match write_atomic(&path, &bytes) {
-                    Ok(()) => send(&tx, &ctx, Msg::Saved { path: Some(path), name }),
+                    Ok(()) => send(
+                        &tx,
+                        &ctx,
+                        Msg::Saved {
+                            path: Some(path),
+                            name,
+                        },
+                    ),
                     Err(e) => send(&tx, &ctx, Msg::Error(format!("Could not save: {e}"))),
                 },
                 Err(e) => send(&tx, &ctx, Msg::Error(format!("Could not save: {e}"))),
@@ -209,7 +268,11 @@ pub fn save_project(snap: Snapshot, path: Option<PathBuf>, tx: Sender<Msg>, ctx:
 }
 
 pub fn ensure_ext(mut p: PathBuf, ext: &str) -> PathBuf {
-    if p.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case(ext)) != Some(true) {
+    if p.extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.eq_ignore_ascii_case(ext))
+        != Some(true)
+    {
         p.set_extension(ext);
     }
     p
@@ -227,17 +290,20 @@ pub fn write_atomic(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()>
 
 /// Asks where an export should go. On the web everything is returned as a download instead.
 pub fn choose_export_dest(format: Format, stem: String, tx: Sender<Msg>, ctx: Context) {
-    if is_web() {
+    #[cfg(target_arch = "wasm32")]
+    {
+        // Browsers have no destination picker: results come back as downloads.
+        let _ = (format, stem);
         send(&tx, &ctx, Msg::ExportDest(Dest::Memory));
-        return;
     }
+    #[cfg(not(target_arch = "wasm32"))]
     spawn(async move {
         let dest = match format {
             Format::PngSequence => AsyncFileDialog::new()
                 .set_title("Choose a folder for the PNG sequence")
                 .pick_folder()
                 .await
-                .map(|f| Dest::Dir(folder_of(&f))),
+                .map(|f| Dest::Dir(file_of(&f))),
             other => {
                 let ext = other.extension();
                 let default = match other {
@@ -263,13 +329,6 @@ pub fn choose_export_dest(format: Format, stem: String, tx: Sender<Msg>, ctx: Co
 #[cfg(not(target_arch = "wasm32"))]
 fn file_of(f: &rfd::FileHandle) -> PathBuf {
     f.path().to_path_buf()
-}
-#[cfg(target_arch = "wasm32")]
-fn file_of(f: &rfd::FileHandle) -> PathBuf {
-    PathBuf::from(f.file_name())
-}
-fn folder_of(f: &rfd::FileHandle) -> PathBuf {
-    file_of(f)
 }
 
 /// Hands memory-resident export output to the user (browser downloads; zipped if several files).

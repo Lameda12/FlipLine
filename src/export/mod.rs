@@ -135,7 +135,10 @@ pub struct SharedBuf(pub Arc<Mutex<Vec<u8>>>);
 
 impl Write for SharedBuf {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.0.lock().map_err(|_| std::io::Error::other("poisoned"))?.extend_from_slice(buf);
+        self.0
+            .lock()
+            .map_err(|_| std::io::Error::other("poisoned"))?
+            .extend_from_slice(buf);
         Ok(buf.len())
     }
 
@@ -146,7 +149,10 @@ impl Write for SharedBuf {
 
 impl SharedBuf {
     pub fn take(&self) -> Vec<u8> {
-        self.0.lock().map(|mut v| std::mem::take(&mut *v)).unwrap_or_default()
+        self.0
+            .lock()
+            .map(|mut v| std::mem::take(&mut *v))
+            .unwrap_or_default()
     }
 }
 
@@ -154,7 +160,13 @@ pub fn sanitize_stem(name: &str) -> String {
     let s: String = name
         .trim()
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     let s = s.trim_matches('_').to_string();
     if s.is_empty() {

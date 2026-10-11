@@ -2,8 +2,8 @@
 //! zoom and pan.
 
 use eframe::egui::{
-    self, pos2, vec2, Color32, CursorIcon, Event, Frame, Order, Painter, PointerButton, Pos2, Rect, Sense, Shape,
-    Stroke, TouchPhase, Ui, Vec2,
+    self, pos2, vec2, Color32, CursorIcon, Event, Frame, Order, Painter, PointerButton, Pos2, Rect, Sense,
+    Shape, Stroke, TouchPhase, Ui, Vec2,
 };
 
 use super::theme::Palette;
@@ -28,7 +28,8 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
 
             // ---- view: fit / zoom / pan ------------------------------------------------------
             let base = rect.center() + vec2(0.0, PEG_RESERVE * 0.5);
-            let fit_zoom = (((rect.width() - 64.0) / cw).min((rect.height() - PEG_RESERVE - 40.0) / ch) * ppp)
+            let fit_zoom = (((rect.width() - 64.0) / cw).min((rect.height() - PEG_RESERVE - 40.0) / ch)
+                * ppp)
                 .clamp(MIN_ZOOM, MAX_ZOOM);
             if let Some(req) = app.view.request.take() {
                 match req {
@@ -94,8 +95,15 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                         }
                         TouchPhase::End | TouchPhase::Cancel => app.input.pressure = None,
                     },
-                    Event::PointerButton { pos, button: PointerButton::Primary, pressed: true, .. } => {
-                        let over_canvas_layer = ctx.layer_id_at(pos).is_none_or(|l| l.order == Order::Background || l == layer);
+                    Event::PointerButton {
+                        pos,
+                        button: PointerButton::Primary,
+                        pressed: true,
+                        ..
+                    } => {
+                        let over_canvas_layer = ctx
+                            .layer_id_at(pos)
+                            .is_none_or(|l| l.order == Order::Background || l == layer);
                         if rect.contains(pos)
                             && over_canvas_layer
                             && !app.input.space_down
@@ -109,7 +117,11 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
                     Event::PointerMoved(pos) if app.stroke.is_some() => {
                         app.pointer_drag(sample_at(pos, app.input.pressure));
                     }
-                    Event::PointerButton { button: PointerButton::Primary, pressed: false, .. } => {
+                    Event::PointerButton {
+                        button: PointerButton::Primary,
+                        pressed: false,
+                        ..
+                    } => {
                         app.pointer_up();
                     }
                     _ => {}
@@ -122,12 +134,18 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
             // ---- paint ---------------------------------------------------------------------------
             let painter = ui.painter_at(rect);
             draw_peg_bar(&painter, canvas, s, &pal);
-            let shadow = egui::Shadow { offset: [0, 5], blur: 22, spread: 0, color: Color32::from_black_alpha(if pal.dark { 120 } else { 55 }) };
+            let shadow = egui::Shadow {
+                offset: [0, 5],
+                blur: 22,
+                spread: 0,
+                color: Color32::from_black_alpha(if pal.dark { 120 } else { 55 }),
+            };
             painter.add(shadow.as_shape(canvas, 2.0));
             painter.rect_filled(canvas, 2.0, color32(app.project.paper));
 
             let onion_tex = if app.onion.enabled && !app.playback.playing {
-                app.onion_cache.get(&ctx, &app.project, app.current, app.onion.depth)
+                app.onion_cache
+                    .get(&ctx, &app.project, app.current, app.onion.depth)
             } else {
                 None
             };
@@ -144,7 +162,11 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
             // ---- cursor ----------------------------------------------------------------------------
             if resp.hovered() {
                 if app.input.space_down || app.input.panning {
-                    ctx.set_cursor_icon(if app.input.panning { CursorIcon::Grabbing } else { CursorIcon::Grab });
+                    ctx.set_cursor_icon(if app.input.panning {
+                        CursorIcon::Grabbing
+                    } else {
+                        CursorIcon::Grab
+                    });
                 } else if !app.playback.playing {
                     match app.tool {
                         ToolId::Brush | ToolId::Eraser => {
@@ -161,7 +183,13 @@ pub fn show(app: &mut FlipLineApp, ui: &mut Ui) {
 
             if app.ui.drop_hover {
                 painter.rect_filled(rect, 0.0, pal.accent.gamma_multiply(0.12));
-                painter.text(rect.center(), egui::Align2::CENTER_CENTER, "Drop images or a .flipline file", egui::FontId::proportional(20.0), pal.accent);
+                painter.text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "Drop images or a .flipline file",
+                    egui::FontId::proportional(20.0),
+                    pal.accent,
+                );
             }
         });
 }
@@ -185,10 +213,22 @@ fn draw_peg_bar(p: &Painter, canvas: Rect, s: f32, pal: &Palette) {
     let h = (24.0 * s).clamp(14.0, 30.0);
     let w = (canvas.width() * 0.5).clamp(120.0, 460.0).min(canvas.width());
     let bar = Rect::from_center_size(pos2(canvas.center().x, canvas.top() - 8.0 - h * 0.5), vec2(w, h));
-    p.rect_filled(bar.translate(vec2(0.0, 2.5)), 4.0, Color32::from_black_alpha(if pal.dark { 90 } else { 40 }));
+    p.rect_filled(
+        bar.translate(vec2(0.0, 2.5)),
+        4.0,
+        Color32::from_black_alpha(if pal.dark { 90 } else { 40 }),
+    );
     p.rect_filled(bar, 4.0, pal.metal);
-    p.rect_stroke(bar, 4.0, Stroke::new(1.0, pal.metal_dark), egui::StrokeKind::Inside);
-    p.line_segment([bar.left_top() + vec2(4.0, 2.0), bar.right_top() + vec2(-4.0, 2.0)], Stroke::new(1.0, Color32::from_white_alpha(90)));
+    p.rect_stroke(
+        bar,
+        4.0,
+        Stroke::new(1.0, pal.metal_dark),
+        egui::StrokeKind::Inside,
+    );
+    p.line_segment(
+        [bar.left_top() + vec2(4.0, 2.0), bar.right_top() + vec2(-4.0, 2.0)],
+        Stroke::new(1.0, Color32::from_white_alpha(90)),
+    );
     // One round centre peg flanked by two slotted pegs, like a real animation disc.
     let c = bar.center();
     let r = h * 0.28;
@@ -197,7 +237,12 @@ fn draw_peg_bar(p: &Painter, canvas: Rect, s: f32, pal: &Palette) {
     for side in [-1.0, 1.0] {
         let slot = Rect::from_center_size(pos2(c.x + side * w * 0.33, c.y), vec2(h * 0.95, r * 1.5));
         p.rect_filled(slot, r * 0.75, pal.metal_dark);
-        p.rect_stroke(slot, r * 0.75, Stroke::new(1.0, Color32::from_white_alpha(70)), egui::StrokeKind::Inside);
+        p.rect_stroke(
+            slot,
+            r * 0.75,
+            Stroke::new(1.0, Color32::from_white_alpha(70)),
+            egui::StrokeKind::Inside,
+        );
     }
 }
 

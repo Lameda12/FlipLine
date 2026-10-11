@@ -63,7 +63,13 @@ fn draw_frame(i: usize) -> Pixmap {
 
     // Ground line.
     if let Some(r) = Rect::from_xywh(110.0, GROUND_Y + 1.0, W as f32 - 220.0, 3.0) {
-        pm.fill_path(&PathBuilder::from_rect(r), &paint([0x1B, 0x1B, 0x22, 255]), FillRule::Winding, t, None);
+        pm.fill_path(
+            &PathBuilder::from_rect(r),
+            &paint([0x1B, 0x1B, 0x22, 255]),
+            FillRule::Winding,
+            t,
+            None,
+        );
     }
 
     // Ball anchored at its bottom so squashing keeps contact with the ground.
@@ -75,8 +81,10 @@ fn draw_frame(i: usize) -> Pixmap {
         if let Some(h) = oval(CX - rx * 0.32, cy - ry * 0.38, rx * 0.26, ry * 0.18) {
             pm.fill_path(&h, &paint([255, 190, 160, 210]), FillRule::Winding, t, None);
         }
-        let mut stroke = Stroke::default();
-        stroke.width = 5.0;
+        let stroke = Stroke {
+            width: 5.0,
+            ..Stroke::default()
+        };
         let mut ink = Paint::default();
         ink.set_color_rgba8(0x1B, 0x1B, 0x22, 255);
         ink.anti_alias = true;
@@ -115,7 +123,10 @@ mod tests {
         assert!(contact.sx > 1.2 && contact.sy < 0.8, "squash {contact:?}");
 
         let near_ground = pose(1);
-        assert!(near_ground.sy > 1.1 && near_ground.sx < 0.95, "stretch {near_ground:?}");
+        assert!(
+            near_ground.sy > 1.1 && near_ground.sx < 0.95,
+            "stretch {near_ground:?}"
+        );
         let falling = pose(11);
         assert!(falling.sy > 1.1, "stretch while falling in {falling:?}");
 

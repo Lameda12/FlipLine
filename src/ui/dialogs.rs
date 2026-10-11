@@ -53,7 +53,9 @@ fn confirm(app: &mut FlipLineApp, ctx: &Context) {
 }
 
 fn new_project(app: &mut FlipLineApp, ctx: &Context) {
-    let Some(d) = app.ui.new_dialog.as_mut() else { return };
+    let Some(d) = app.ui.new_dialog.as_mut() else {
+        return;
+    };
     let mut create = false;
     let mut sample = false;
     let mut cancel = false;
@@ -73,13 +75,20 @@ fn new_project(app: &mut FlipLineApp, ctx: &Context) {
                 }
             }
         });
-        ui.label(RichText::new("Size is fixed for the whole project.").size(11.5).color(pal.dim));
+        ui.label(
+            RichText::new("Size is fixed for the whole project.")
+                .size(11.5)
+                .color(pal.dim),
+        );
         ui.add_space(12.0);
         ui.horizontal(|ui| {
             if w::accent_button(ui, "Create").clicked() {
                 create = true;
             }
-            if w::pill(ui, "Load sample", false).on_hover_text("The 12-frame bouncing ball").clicked() {
+            if w::pill(ui, "Load sample", false)
+                .on_hover_text("The 12-frame bouncing ball")
+                .clicked()
+            {
                 sample = true;
             }
             if w::pill(ui, "Cancel", false).clicked() {
@@ -91,8 +100,16 @@ fn new_project(app: &mut FlipLineApp, ctx: &Context) {
     if create {
         let (_, w_, h_) = SIZE_PRESETS[idx.min(SIZE_PRESETS.len() - 1)];
         app.ui.new_dialog = None;
-        let name = if name.is_empty() { "Untitled".to_string() } else { name };
-        app.request(Pending::NewProject { name, width: w_, height: h_ });
+        let name = if name.is_empty() {
+            "Untitled".to_string()
+        } else {
+            name
+        };
+        app.request(Pending::NewProject {
+            name,
+            width: w_,
+            height: h_,
+        });
     } else if sample {
         app.ui.new_dialog = None;
         app.request(Pending::Sample);
@@ -162,10 +179,16 @@ fn export(app: &mut FlipLineApp, ctx: &Context) {
             }
             Format::PngSequence => {
                 ui.checkbox(&mut d.opts.transparent, "Transparent background");
-                ui.checkbox(&mut d.opts.expand_holds, "One image per exposure (keeps hold timing)");
+                ui.checkbox(
+                    &mut d.opts.expand_holds,
+                    "One image per exposure (keeps hold timing)",
+                );
             }
             Format::SpriteSheet => {
-                ui.label(RichText::new("Transparent sheet, one cell per drawing, near-square grid.").color(pal.dim));
+                ui.label(
+                    RichText::new("Transparent sheet, one cell per drawing, near-square grid.")
+                        .color(pal.dim),
+                );
             }
             Format::Mp4 => {
                 ui.label(RichText::new("H.264, drawn over the paper colour.").color(pal.dim));
@@ -179,11 +202,18 @@ fn export(app: &mut FlipLineApp, ctx: &Context) {
             Format::SpriteSheet => "A single PNG.",
             Format::Mp4 => "Timing follows holds exactly at the project fps.",
         };
-        ui.label(RichText::new(format!("{frames} frames · {ticks} exposures · {fps} fps · {secs:.2}s. {what}")).size(11.5).color(pal.dim));
+        ui.label(
+            RichText::new(format!(
+                "{frames} frames · {ticks} exposures · {fps} fps · {secs:.2}s. {what}"
+            ))
+            .size(11.5)
+            .color(pal.dim),
+        );
 
         ui.add_space(12.0);
         ui.horizontal(|ui| {
-            if w::accent_button(ui, if d.choosing { "Choosing…" } else { "Export…" }).clicked() && !d.choosing {
+            if w::accent_button(ui, if d.choosing { "Choosing…" } else { "Export…" }).clicked() && !d.choosing
+            {
                 go = Some((d.opts.format, crate::export::sanitize_stem(&d.opts.base_name)));
             }
             if w::pill(ui, "Cancel", false).clicked() {
@@ -201,7 +231,9 @@ fn export(app: &mut FlipLineApp, ctx: &Context) {
 }
 
 fn progress(app: &mut FlipLineApp, ctx: &Context) {
-    let Some((done, total, label)) = app.export_progress() else { return };
+    let Some((done, total, label)) = app.export_progress() else {
+        return;
+    };
     let pal = Palette::of(ctx);
     let mut cancel = false;
     egui::Area::new(Id::new("export_progress"))
@@ -213,13 +245,26 @@ fn progress(app: &mut FlipLineApp, ctx: &Context) {
                 .stroke(egui::Stroke::new(1.0, pal.line))
                 .corner_radius(10)
                 .inner_margin(egui::Margin::same(14))
-                .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: egui::Color32::from_black_alpha(70) })
+                .shadow(egui::Shadow {
+                    offset: [0, 4],
+                    blur: 16,
+                    spread: 0,
+                    color: egui::Color32::from_black_alpha(70),
+                })
                 .show(ui, |ui| {
                     ui.set_width(320.0);
                     ui.label(RichText::new(format!("Exporting {label}")).strong());
                     ui.add_space(4.0);
-                    let frac = if total == 0 { 0.0 } else { done as f32 / total as f32 };
-                    ui.add(ProgressBar::new(frac).text(format!("{done}/{total}")).animate(true));
+                    let frac = if total == 0 {
+                        0.0
+                    } else {
+                        done as f32 / total as f32
+                    };
+                    ui.add(
+                        ProgressBar::new(frac)
+                            .text(format!("{done}/{total}"))
+                            .animate(true),
+                    );
                     ui.add_space(4.0);
                     if w::pill(ui, "Cancel", false).clicked() {
                         cancel = true;
@@ -237,7 +282,11 @@ fn help(app: &mut FlipLineApp, ctx: &Context) {
         return;
     }
     let pal = Palette::of(ctx);
-    let cmd = if ctx.os() == egui::os::OperatingSystem::Mac { "Cmd" } else { "Ctrl" };
+    let cmd = if ctx.os() == egui::os::OperatingSystem::Mac {
+        "Cmd"
+    } else {
+        "Ctrl"
+    };
     let sections: Vec<(&str, Vec<(String, &str)>)> = vec![
         (
             "Tools",
@@ -290,17 +339,24 @@ fn help(app: &mut FlipLineApp, ctx: &Context) {
             for (i, (title, rows)) in sections.iter().enumerate() {
                 let ui: &mut Ui = &mut cols[i % 2];
                 w::label_caps(ui, title);
-                egui::Grid::new(format!("help_{i}")).num_columns(2).spacing([14.0, 4.0]).show(ui, |ui| {
-                    for (k, what) in rows {
-                        ui.label(RichText::new(k).monospace().color(pal.accent));
-                        ui.label(*what);
-                        ui.end_row();
-                    }
-                });
+                egui::Grid::new(format!("help_{i}"))
+                    .num_columns(2)
+                    .spacing([14.0, 4.0])
+                    .show(ui, |ui| {
+                        for (k, what) in rows {
+                            ui.label(RichText::new(k).monospace().color(pal.accent));
+                            ui.label(*what);
+                            ui.end_row();
+                        }
+                    });
                 ui.add_space(10.0);
             }
         });
-        ui.label(RichText::new("Drop a numbered image sequence on the window to import it as frames.").size(11.5).color(pal.dim));
+        ui.label(
+            RichText::new("Drop a numbered image sequence on the window to import it as frames.")
+                .size(11.5)
+                .color(pal.dim),
+        );
     });
     if modal.should_close() {
         app.ui.help = false;

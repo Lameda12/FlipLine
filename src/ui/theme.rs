@@ -2,8 +2,7 @@
 //! dark variants that follow the OS theme.
 
 use eframe::egui::{
-    self, Color32, Context, CornerRadius, FontFamily, FontId, Margin, Stroke, TextStyle, Theme,
-    Visuals,
+    self, Color32, Context, CornerRadius, FontFamily, FontId, Margin, Stroke, TextStyle, Theme, Visuals,
 };
 
 #[derive(Clone, Copy)]
@@ -104,7 +103,7 @@ fn visuals(dark: bool) -> Visuals {
     w.inactive.fg_stroke = Stroke::new(1.0, p.text);
     w.inactive.corner_radius = r;
 
-    let hover = if dark { p.cell_hold } else { p.cell_hold };
+    let hover = p.cell_hold;
     w.hovered.bg_fill = hover;
     w.hovered.weak_bg_fill = hover;
     w.hovered.bg_stroke = Stroke::new(1.0, p.dim);
